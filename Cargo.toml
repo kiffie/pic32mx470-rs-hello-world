@@ -1,0 +1,11 @@
+[package]
+name = "pic32mx470-rs-hello-world"
+version = "0.1.0"
+authors = ["Kiffie van Haash <kiffie.vanhaash@gmail.com>"]
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+mips_rt = { path = "mips-rt" }
+volatile-register = "0.2.0"
+pic32mx4xxfxxxh = { git = "https://github.com/kiffie/pic32-rs.git" }

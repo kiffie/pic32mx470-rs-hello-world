@@ -1,0 +1,9 @@
+[package]
+name = "mips_rt"
+version = "0.1.0"
+authors = ["Kiffie van Haash <kiffie.vanhaash@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+r0 = "0.2.2"
+
