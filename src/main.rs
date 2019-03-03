@@ -1,5 +1,4 @@
 
-#![allow(unused_variables)]
 #![no_main]
 #![no_std]
 #![feature(lang_items)]
@@ -7,6 +6,8 @@
 
 use core::panic::PanicInfo;
 use core::fmt::Write;
+use log;
+use log::{info, error};
 use mips_rt;
 use pic32mx4xxfxxxh;
 
@@ -79,13 +80,37 @@ impl Write for Uart {
 
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn main() -> ! {
+fn debug_write() -> Uart {
+    Uart
+}
 
-    let txt = "Hello World!\n";
+struct UartLogger;
+
+impl log::Log for UartLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::Level::Info
+    }
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            writeln!(debug_write(), "{} - {}", record.level(), record.args()).unwrap();
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+static UART_LOGGER: UartLogger = UartLogger;
+
+#[no_mangle]
+pub fn main() -> ! {
+
+    log::set_logger(&UART_LOGGER).unwrap();
+    log::set_max_level(log::LevelFilter::Info);
     let mut uart = Uart::init();
     let mut state = false;
     let mut ctr : u32 = 0;
+    info!("starting loop");
     loop {
         writeln!(uart, "Hello World! ctr = {}", ctr).unwrap();
         ctr += 1;
@@ -94,7 +119,7 @@ pub unsafe extern "C" fn main() -> ! {
         let mut i = 1000000;
         while i > 0 {
             i-= 1;
-            asm!("nop");
+            unsafe { asm!("nop") };
         }
         state = !state;
     }
@@ -102,6 +127,7 @@ pub unsafe extern "C" fn main() -> ! {
 
 #[panic_handler]
 fn panic(_panic: &PanicInfo<'_>) -> ! {
+    error!("Panic: entering endless loop");
     loop {}
 }
 
