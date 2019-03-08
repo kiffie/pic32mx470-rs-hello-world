@@ -38,3 +38,5 @@ pub unsafe extern "C" fn rust_reset() -> ! {
 
 #[no_mangle]
 pub unsafe extern "C" fn DefaultPreInit() {}
+
+pub mod interrupt;

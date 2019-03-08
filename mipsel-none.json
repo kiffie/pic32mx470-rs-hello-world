@@ -5,7 +5,7 @@
   "emit-debug-gdb-scripts": false,
   "env": "",
   "executables": true,
-  "features": "+mips32r2,+soft-float",
+  "features": "+mips32r2,+soft-float,+noabicalls",
   "has-elf-tls": false,
   "has-rpath": true,
   "linker": "rust-lld",

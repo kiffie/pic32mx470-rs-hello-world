@@ -1,4 +1,15 @@
+file interrupt.rs: based on https://github.com/rust-embedded/cortex-m
+
+Copyright (c) 2016 Jorge Aparicio
+
+licensed under the MIT or under the Apache-2.0 license
+
+===============================================================================
+
+https://github.com/chipKIT32/pic32-part-support
 file crt0.S: modified for usage with Rust (C-related parts removed)
+file general-exception.S
+linker script(s) may contain fragments from pic32-part-support
 
 Copyright (c) 2014, Microchip Technology Inc. and its subsidiaries ("Microchip")
 All rights reserved.

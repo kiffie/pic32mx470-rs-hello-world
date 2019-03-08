@@ -11,6 +11,48 @@ use log::{info, error};
 use mips_rt;
 use pic32mx4xxfxxxh;
 
+use core::cell::Cell;
+use mips_rt::interrupt;
+use mips_rt::interrupt::Mutex;
+
+// PIC32 configuration registers
+#[link_section = ".configsfrs"]
+#[no_mangle]
+pub static CONFIGSFRS: [u32; 4] = [
+    0xffffffff,     // DEVCFG3
+    0xfff879f9,     // DEVCFG2
+    0xff744ddb,     // DEVCFG1
+    0x7ffffff3,     // DEVCFG0
+];
+
+static TICKS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0));
+
+// Timer 1 ISR
+#[no_mangle]
+pub extern "C" fn _vector_4_fn() {
+    let ctr = interrupt::free(|cs| {
+        let cell = TICKS.borrow(cs);
+        let ctr = cell.get() + 1;
+        cell.set(ctr);
+        ctr
+    });
+    set_yellow_led(ctr & 0x01 != 0);
+    let  p = unsafe { pic32mx4xxfxxxh::Peripherals::steal()};
+    p.INT.ifs0clr.write(|w| { w.t1if().bit(true) });
+}
+
+fn timer_init(){
+
+    let  p = unsafe { pic32mx4xxfxxxh::Peripherals::steal()};
+    p.TMR1.pr1.write(|w| unsafe { w.bits(0xffff) });
+    p.TMR1.t1con.write(|w| unsafe { w.on().bit(true)
+                                    .tckps().bits(0b11)});
+
+    p.INT.ifs0clr.write(|w| { w.t1if().bit(true) });
+    p.INT.iec0set.write(|w| { w.t1ie().bit(true) });
+    p.INT.ipc1.modify(|_, w| unsafe { w.t1ip().bits(1) });
+}
+
 
 fn set_yellow_led(on: bool){
     let bit = 1 << 1;
@@ -88,7 +130,7 @@ struct UartLogger;
 
 impl log::Log for UartLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        metadata.level() <= log::Level::Info
+        metadata.level() <= log::Level::Debug
     }
 
     fn log(&self, record: &log::Record) {
@@ -106,15 +148,23 @@ static UART_LOGGER: UartLogger = UartLogger;
 pub fn main() -> ! {
 
     log::set_logger(&UART_LOGGER).unwrap();
-    log::set_max_level(log::LevelFilter::Info);
+    log::set_max_level(log::LevelFilter::Debug);
     let mut uart = Uart::init();
     let mut state = false;
-    let mut ctr : u32 = 0;
+    set_yellow_led(false);
+    info!("initializing Timer 1");
+    unsafe {
+        interrupt::enable_mv_irq();
+        let  p = pic32mx4xxfxxxh::Peripherals::steal();
+        p.INT.intconset.write(|w| { w.mvec().bit(true).ss0().bit(false) });
+        interrupt::enable();
+    }
+    timer_init();
     info!("starting loop");
     loop {
-        writeln!(uart, "Hello World! ctr = {}", ctr).unwrap();
-        ctr += 1;
-        set_yellow_led(state);
+        let ticks: u32 = { interrupt::free(|cs| { TICKS.borrow(cs).get() }) };
+        writeln!(uart, "Hello World! ticks = {}", ticks).unwrap();
+        //set_yellow_led(state);
         set_green_led(!state);
         let mut i = 1000000;
         while i > 0 {

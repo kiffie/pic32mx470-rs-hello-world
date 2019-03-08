@@ -1,14 +1,9 @@
 /*************************************************************************
- * Processor-specific object file.  Contains SFR definitions.
+ * Processor-specific object file.
  *************************************************************************/
-/*INPUT("processor.o")*/
 
 /*************************************************************************
  * Symbols used for interrupt-vector table generation
- * To override the defaults, define the _vector_spacing & _ebase_address
- * symbols using the --defsym linker opt as shown in these examples:
- *   xc32-gcc src.c -Wl,--defsym=_vector_spacing=2
- *   xc32-gcc src.c -Wl,--defsym=_ebase_address=0x9D001000
  *************************************************************************/
 PROVIDE(_vector_spacing = 0x0001);
 PROVIDE(_ebase_address = 0x9FC01000);
@@ -46,7 +41,7 @@ _GEN_EXCPT_ADDR                = _ebase_address + 0x180;
 MEMORY
 {
   kseg0_program_mem     (rx)  : ORIGIN = 0x9D000000, LENGTH = 0x80000
-  kseg0_boot_mem              : ORIGIN = 0x9FC00490, LENGTH = 0x970
+/*  kseg0_boot_mem              : ORIGIN = 0x9FC00490, LENGTH = 0x970 */
   exception_mem               : ORIGIN = 0x9FC01000, LENGTH = 0x1000
   kseg1_boot_mem              : ORIGIN = 0xBFC00000, LENGTH = 0x490
   debug_exec_mem              : ORIGIN = 0xBFC02000, LENGTH = 0xFF0

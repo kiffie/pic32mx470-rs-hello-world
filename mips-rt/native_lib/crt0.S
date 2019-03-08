@@ -382,7 +382,7 @@ _no_nmi:
         .set noreorder
         .ent _bev_exception
 _bev_exception:
-        la        k0,_bootstrap_exception_handler
+        #la        k0,_bootstrap_exception_handler
         jr        k0
         nop
 
