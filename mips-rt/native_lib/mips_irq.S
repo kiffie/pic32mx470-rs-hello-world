@@ -2,7 +2,8 @@
  * Interrupts
  */
 
-#include <xc.h>
+#include <regdef.h>
+#include <cp0defs.h>
 
 .section .text, code
 .set noreorder

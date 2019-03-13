@@ -45,33 +45,9 @@
  *
  ********************************************************************/
 
-#include "xc.h"
+#include <regdef.h>
 #include <cp0defs.h>
 
-#ifdef __LIBBUILD__
-   # Replace the standard debugging information with a simple filename. This
-   # prevents the library build directory from showing up in MPLAB IDE. It
-   # also effectively disables source-line debugging.
-   .file 1 "libpic32/startup/crt0.S"
-   .loc 1 0
-#endif
-
-#if (__XC32_VERSION > 1000) && !defined(CPP_INIT)
-#define CPP_INIT
-#endif
-
-#if !defined(PIC32_SRS_SET_COUNT)
-#  if defined(__PIC32_SRS_SET_COUNT)
-#    define PIC32_SRS_SET_COUNT __PIC32_SRS_SET_COUNT
-#  else
-#    warning PIC32_SRS_SET_COUNT not defined on build line
-#    define PIC32_SRS_SET_COUNT 2
-#  endif
-#endif
-
-#if defined(__PIC32MX) || defined(__PIC32MM) || defined(__PIC32MZ)
-#define INIT_DATA 1
-#endif
 
 /* This file contains 32-bit assembly code */
        .set nomips16
@@ -170,57 +146,8 @@ _no_nmi:
         #   _gp is initialized by the linker script to point to "middle"
         #   of the small variables region
         ##################################################################
-        la      gp,_gp
+#        la      gp,_gp
 
-#if (PIC32_SRS_SET_COUNT == 2)
-        ##################################################################
-        # Initialize Global Pointer in Shadow Set
-        #   The SRSCtl's PSS field must be set to the shadow set in which
-        #   to initialize the global pointer.  Since we have only a
-        #   single shadow set (besides the normal), we will initialize
-        #   SRSCtl<PSS> to SRSCtl<HSS>.  We then write the global pointer
-        #   to the previous shadow set to ensure that on interrupt, the
-        #   global pointer has been initialized.
-        ##################################################################
-        mfc0    t1,_CP0_SRSCTL          # Read SRSCtl register
-        add     t3,t1,zero              # Save off current SRSCtl
-        ext     t2,t1,26,4              # to obtain HSS field
-        ins     t1,t2,6,4               # Put HSS field
-        mtc0    t1,_CP0_SRSCTL          # into SRSCtl<PSS>
-        ehb                             # Clear hazard before using new SRSCTL
-        wrpgpr  gp,gp                   # Set global pointer in PSS
-        mtc0    t3,_CP0_SRSCTL          # Restore SRSCtl
-        ehb
-
-#elif (PIC32_SRS_SET_COUNT > 2)
-        ##################################################################
-        # Initialize Global Pointer in Shadow Set(s)
-        #   The SRSCtl PSS field must be set to the shadow set in which
-        #   to initialize the global pointer.  We will initialize
-        #   SRSCtl<PSS> to the number of reg sets and work down to set zero.
-        #   We write the global pointer to the previous shadow set to
-        #   ensure that on interrupt, the global pointer has been
-        #   initialized.
-        ##################################################################
-        mfc0    t1,_CP0_SRSCTL          # Read SRSCtl register
-        add     t3,t1,zero              # Save off current SRSCtl
-
-        li      t2,(PIC32_SRS_SET_COUNT-1)
-
-1:      ins     t1,t2,6,4               # Put next shadow set field
-        mtc0    t1,_CP0_SRSCTL          # into SRSCtl<PSS>
-        ehb                             # Clear hazard before using new SRSCTL
-        wrpgpr  gp,gp                   # Set global pointer in PSS
-
-        addiu   t2,t2,-1                # Next lower shadow set
-                                        # Loop for all sets
-        bne     t2,$0,1b                # Down to zero (normal GPR set)
-        nop
-
-        mtc0    t3,_CP0_SRSCTL          # Restore SRSCtl
-        ehb
-
-#endif /* (PIC32_SRS_SET_COUNT > 2) */
 
         ##################################################################
         # Call the "on reset" procedure

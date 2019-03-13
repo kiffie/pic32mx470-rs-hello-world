@@ -7,11 +7,10 @@ BIN2HEX = pic32-bin2hex
 OBJDUMP = pic32-objdump
 
 LIB = libnative
-TARGET = 32MX470F512H
 
-CFLAGS = -Wall -g -mprocessor=$(TARGET) -Os
+CFLAGS = -Wall -g -mips32r2 -Os -Iinclude
 
-OBJECTS = crt0.o isr_context.o excpetion_table.o mips_irq.o general-exception.o
+OBJECTS = crt0.o isr_context.o exception_table.o mips_irq.o general-exception.o
 
 DEPS    = $(patsubst %.o, %.d, $(notdir $(OBJECTS)))
 

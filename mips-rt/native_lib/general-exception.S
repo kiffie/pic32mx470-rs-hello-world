@@ -45,7 +45,9 @@
  *
  ********************************************************************/
  
-#include <xc.h>
+#include <regdef.h>
+#include <cp0defs.h>
+
 #ifdef __LIBBUILD__
    .file 1 "general-exception.S"
    .loc 1 0

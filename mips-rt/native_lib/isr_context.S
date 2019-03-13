@@ -5,7 +5,8 @@
  *
  */
 
-#include <xc.h>
+#include <regdef.h>
+#include <cp0defs.h>
 
 .section .text.isr_context, code
 .set noreorder
