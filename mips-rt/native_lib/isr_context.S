@@ -8,7 +8,7 @@
 #include <regdef.h>
 #include <cp0defs.h>
 
-.section .text.isr_context, code
+.section .text.isr_context, "ax"
 .set noreorder
 .set noat
 .set nomips16

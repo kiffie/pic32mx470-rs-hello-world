@@ -5,7 +5,7 @@
 #include <regdef.h>
 #include <cp0defs.h>
 
-.section .text, code
+.section .text
 .set noreorder
 .set nomips16
 

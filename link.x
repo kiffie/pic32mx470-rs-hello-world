@@ -7,9 +7,9 @@ INPUT("32MX470F512H_procdefs.ld");
 /* PROVIDE(_general_exception_context = _default_handler); */
 
 /* The entry point is the reset handler */
-ENTRY(Reset);
+ENTRY(_reset);
 
-EXTERN(RESET_VECTOR);
+EXTERN(_gen_exception)
 
 /* stack */
 PROVIDE(_stack = ORIGIN(kseg1_data_mem) + LENGTH(kseg1_data_mem));
@@ -24,7 +24,7 @@ PROVIDE(__pre_init = DefaultPreInit);
 SECTIONS
 {
   /* ## PIC32MX configuration registers */
-  .configsfrs_ : {
+  .configsfrs : {
     KEEP(*(.configsfrs));
   } > configsfrs
 
@@ -50,7 +50,7 @@ SECTIONS
   {
     . = _GEN_EXCPT_ADDR;
     KEEP(*(.gen_handler))
-  } > exception_mem
+  } > exception_mem = 0xffffffff
 
   .vector_0 _ebase_address + 0x200 + ((_vector_spacing << 5) * 0) :
   {

@@ -8,7 +8,7 @@ vect_fmt = '''\
 .weak _vector_{0}_fn, _vector_{0}_j
 _vector_{0}_fn = _default_isr_fn
 _vector_{0}_context  = _isr_context
-.section .vector_{0}, code
+.section .vector_{0}, "ax"
 .ent _vector_{0}
 _vector_{0}:
         la  k0,_vector_{0}_fn

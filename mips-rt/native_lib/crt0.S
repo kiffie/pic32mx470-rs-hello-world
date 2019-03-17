@@ -55,7 +55,7 @@
         ##################################################################
         # Entry point of the entire application
         ##################################################################
-        .section .reset,code,keep
+        .section .reset, "ax"
         .align 2
         .set noreorder
         .ent _reset
@@ -90,7 +90,8 @@ __reset_switch_isa:
 #else
 
 _reset:
-        jal _startup
+        la      t0,_startup
+        jalr    t0
         nop
 
 #endif  /* __PIC32_HAS_MICROMIPS */
@@ -100,7 +101,7 @@ _reset:
         .globl _reset
         .size _reset, .-_reset
 
-        .section .reset.startup,code,keep
+        .section .reset.startup, "ax"
         .align 2
         .set noreorder
 
@@ -304,7 +305,7 @@ _no_nmi:
         # Boot Exception Vector Handler
         # Jumps to _bootstrap_exception_handler
         ##################################################################
-        .section .bev_handler,code,keep
+        .section .bev_handler, "ax"
         .align 2
         .set noreorder
         .ent _bev_exception
@@ -314,21 +315,6 @@ _bev_exception:
         nop
 
         .end _bev_exception
-
-        ##################################################################
-        # General Exception Vector Handler
-        # Jumps to _general_exception_context
-        ##################################################################
-        .section .gen_handler,code
-        .align 2
-        .set noreorder
-        .ent _gen_exception
-_gen_exception:
-0:      la      k0,_general_exception_context
-        jr      k0
-        nop
-
-        .end _gen_exception
 
 #if defined(INIT_MMU_MZ_FIXED) || defined(__PIC32_HAS_MMU_MZ_FIXED)
         ##################################################################
@@ -364,23 +350,11 @@ _cache_err_vector:
         .end _cache_err_vector
 #endif
 
-        .section .text.main_entry,code,keep
+        .section .text.main_entry, "ax"
         .align 2
         .ent _main_entry
 _main_entry:
 
-#if defined(CPP_INIT)
-        .weak _init
-        # call .init section to run constructors etc
-        lui	a0,%hi(_init)
-        addiu	sp,sp,-24
-        addiu	a0,a0,%lo(_init)
-        beq	a0,$0,2f
-        sw	$31,20(sp)	 #,
-        jalr	a0
-        nop
-2:
-#endif
         and     a0,a0,0
         and     a1,a1,0
 

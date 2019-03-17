@@ -45,31 +45,7 @@ MEMORY
   exception_mem               : ORIGIN = 0x9FC01000, LENGTH = 0x1000
   kseg1_boot_mem              : ORIGIN = 0xBFC00000, LENGTH = 0x490
   debug_exec_mem              : ORIGIN = 0xBFC02000, LENGTH = 0xFF0
-  config3                     : ORIGIN = 0xBFC02FF0, LENGTH = 0x4
-  config2                     : ORIGIN = 0xBFC02FF4, LENGTH = 0x4
-  config1                     : ORIGIN = 0xBFC02FF8, LENGTH = 0x4
-  config0                     : ORIGIN = 0xBFC02FFC, LENGTH = 0x4
   kseg1_data_mem       (w!x)  : ORIGIN = 0xA0000000, LENGTH = 0x20000
   sfrs                        : ORIGIN = 0xBF800000, LENGTH = 0x100000
   configsfrs                  : ORIGIN = 0xBFC02FF0, LENGTH = 0x10
-}
-
-/*************************************************************************
- * Configuration-word sections. Map the config-pragma input sections to
- * absolute-address output sections.
- *************************************************************************/
-SECTIONS
-{
-  .config_BFC02FF0 : {
-    KEEP(*(.config_BFC02FF0))
-  } > config3
-  .config_BFC02FF4 : {
-    KEEP(*(.config_BFC02FF4))
-  } > config2
-  .config_BFC02FF8 : {
-    KEEP(*(.config_BFC02FF8))
-  } > config1
-  .config_BFC02FFC : {
-    KEEP(*(.config_BFC02FFC))
-  } > config0
 }

@@ -48,17 +48,13 @@
 #include <regdef.h>
 #include <cp0defs.h>
 
-#ifdef __LIBBUILD__
-   .file 1 "general-exception.S"
-   .loc 1 0
-#endif
   ###################
   # Default general exception handler
   ###################
 
   .extern _general_exception_handler
 
-  .section .text.general_exception, code
+  .section .text.general_exception, "ax"
   .set noreorder
   .set noat
   .set nomips16
