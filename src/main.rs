@@ -15,6 +15,10 @@ use core::cell::Cell;
 use mips_rt::interrupt;
 use mips_rt::interrupt::Mutex;
 
+mod uart;
+use uart::Uart;
+
+
 // PIC32 configuration registers
 #[link_section = ".configsfrs"]
 #[no_mangle]
@@ -79,54 +83,46 @@ fn set_green_led(on: bool){
     }
 }
 
-struct Uart;
 
-impl Uart {
+struct TxWriter<'a> {
+    tx: &'a uart::Tx,
+}
 
-    fn init() -> Uart {
-        let  p = unsafe { pic32mx4xxfxxxh::Peripherals::steal()};
-
-        let pps = p.PPS;
-        pps.rpf5r.write(|w| unsafe { w.rpf5r().bits(0b0001) }); // UART 2 on RPF5
-
-        let sys_clock : u32 = 96000000;
-        let pb_clock : u32 = sys_clock; // TODO: consider PBDIV
-        let baud_rate : u32 = 115200;
-        let brg = (pb_clock/(4*baud_rate)-1) as u16;
-
-        let uart2 = p.UART2;
-        uart2.u2mode.write(|w|  { w.brgh().bit(true) });
-        uart2.u2sta.write(|w| unsafe { w.utxen().bit(true).utxisel().bits(0b10) });
-        uart2.u2brg.write(|w| unsafe { w.brg().bits(brg) });
-        uart2.u2modeset.write(|w| w.on().bit(true));
-        Uart
-    }
-
-    fn write_byte(&self, byte: u8){
-
-        let  uart2 = unsafe { pic32mx4xxfxxxh::Peripherals::steal()}.UART2;
-
-        while uart2.u2sta.read().utxbf().bit() { }
-        uart2.u2txreg.write(|w| unsafe { w.u2txreg().bits(byte as u16) });
+impl<'a> TxWriter<'a> {
+    fn new(tx: &uart::Tx) -> TxWriter {
+        TxWriter{
+            tx: tx,
+        }
     }
 }
 
-impl Write for Uart {
+impl<'a> core::fmt::Write for TxWriter<'a> {
 
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for b in s.bytes() {
-            self.write_byte(b);
+            while !self.tx.try_write_byte(b) {};
         }
         Ok(())
     }
 
 }
 
-fn debug_write() -> Uart {
-    Uart
+
+struct UartLogger {
+    tx: Option<uart::Tx>,
 }
 
-struct UartLogger;
+impl UartLogger {
+    const fn new() -> UartLogger {
+        UartLogger{
+            tx: None,
+        }
+    }
+
+    fn set_tx(&mut self, tx: uart::Tx) {
+        self.tx = Some(tx);
+    }
+}
 
 impl log::Log for UartLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
@@ -135,21 +131,36 @@ impl log::Log for UartLogger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            writeln!(debug_write(), "{} - {}", record.level(), record.args()).unwrap();
+            if let Some(ref tx) = self.tx {
+                let mut txw = TxWriter::new(tx);
+                writeln!(txw, "{} - {}", record.level(), record.args()).unwrap();
+            }
         }
     }
 
     fn flush(&self) {}
 }
 
-static UART_LOGGER: UartLogger = UartLogger;
+static mut UART_LOGGER: UartLogger = UartLogger::new();
 
 #[no_mangle]
 pub fn main() -> ! {
 
-    log::set_logger(&UART_LOGGER).unwrap();
+    //configure IO ports for UART2
+    let  p = unsafe { pic32mx4xxfxxxh::Peripherals::steal()};
+    let pps = p.PPS;
+    pps.rpf5r.write(|w| unsafe { w.rpf5r().bits(0b0001) }); // UART 2 on RPF5
+    // initialize UART2
+    let uart = Uart::new(uart::HwModule::UART2);
+    uart.init(96000000, 115200);
+    let (tx, _) = uart.split();
+
+    unsafe {
+        UART_LOGGER.set_tx(tx);
+        log::set_logger(&UART_LOGGER).unwrap();
+    }
     log::set_max_level(log::LevelFilter::Debug);
-    let mut uart = Uart::init();
+
     let mut state = false;
     set_yellow_led(false);
     info!("initializing Timer 1");
@@ -163,7 +174,7 @@ pub fn main() -> ! {
     info!("starting loop");
     loop {
         let ticks: u32 = { interrupt::free(|cs| { TICKS.borrow(cs).get() }) };
-        writeln!(uart, "Hello World! ticks = {}", ticks).unwrap();
+        info!("Hello World! ticks = {}", ticks);
         //set_yellow_led(state);
         set_green_led(!state);
         let mut i = 1000000;
@@ -180,4 +191,3 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
     error!("Panic: entering endless loop");
     loop {}
 }
-

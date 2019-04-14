@@ -9,6 +9,9 @@ edition = "2018"
 mips_rt = { path = "mips-rt" }
 bare-metal = { version = "0.2.4", features = ["const-fn"] }
 volatile-register = "0.2.0"
+embedded-hal = "0.2.2"
+nb = "0.1.1"
+vcell = "0.1.0"
 pic32mx4xxfxxxh = { git = "https://github.com/kiffie/pic32-pac.git" }
 log = "0.4.6"
 
